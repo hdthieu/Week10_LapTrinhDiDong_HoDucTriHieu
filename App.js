@@ -11,7 +11,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { fetchBikes } from './components/BikeSlice';
+import { fetchBikes, addProduct } from './components/BikeSlice';
 import { useSelector, useDispatch } from 'react-redux';
 import { store } from './components/Store';
 import { Provider } from 'react-redux';
@@ -19,37 +19,37 @@ import axios from 'axios';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 const AddProductScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [urlImg, setUrlImg] = useState(''); 
+  const [urlImg, setUrlImg] = useState('');
   const [type, setType] = useState('');
   const [discount, setDiscount] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleAddProduct = async () => {
-    try {
-      const response = await axios.post(
-        'https://670b3713ac6860a6c2cb69ff.mockapi.io/bike',
-        {
-          name: name,
-          price: parseFloat(price),
-          image: urlImg,
-          type: type,
-          discount: discount,
-          description: description
-        }
-      );
+  const dispatch = useDispatch();
 
-      // Kiểm tra xem yêu cầu có thành công không
-      if (response.status === 201) {
+  const handleAddProduct = () => {
+    const newProduct = {
+      name,
+      price: parseFloat(price),
+      image: urlImg,
+      type,
+      discount,
+      description,
+    };
+
+    dispatch(addProduct(newProduct))
+      .unwrap()
+      .then(() => {
         Alert.alert('Success', 'Product added successfully!');
-        navigation.goBack(); // Quay lại màn hình trước đó sau khi thêm xong
-      }
-    } catch (error) {
-      console.error('Error adding product:', error);
-      Alert.alert('Error', 'There was an error adding the product.');
-    }
+        navigation.goBack();
+      })
+      .catch((error) => {
+        Alert.alert('Error', 'There was an error adding the product.');
+        console.error('Error adding product:', error);
+      });
   };
 
   return (
@@ -74,10 +74,29 @@ const AddProductScreen = ({ navigation }) => {
         value={urlImg}
         onChangeText={setUrlImg}
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Type"
+        value={type}
+        onChangeText={setType}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Discount"
+        value={discount}
+        onChangeText={setDiscount}
+      />
+       <TextInput
+        style={styles.input}
+        placeholder="Description"
+        value={description}
+        onChangeText={setDescription}
+      />
       <Button title="Add Product" onPress={handleAddProduct} />
     </View>
   );
 };
+
 const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
@@ -131,6 +150,10 @@ const Screen2 = ({ navigation }) => {
       dispatch(fetchBikes());
     }
   }, [status, dispatch]);
+
+  if (status === 'failed') {
+    return <Text>Error: {error}</Text>;
+  }
 
   const render = ({ item }) => {
     return (

@@ -6,12 +6,26 @@ export const fetchBikes = createAsyncThunk('bikes/fetchBikes', async () => {
   const response = await axios.get('https://670b3713ac6860a6c2cb69ff.mockapi.io/bike');
   return response.data;
 });
+export const addProduct = createAsyncThunk(
+  'bikes/addProduct',
+  async (productData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        'https://670b3713ac6860a6c2cb69ff.mockapi.io/bike',
+        productData
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 const bikeSlice = createSlice({
   name: 'bikes',
   initialState: {
     items: [],
-    status: 'idle', 
+    status: 'idle',
     error: null,
   },
   reducers: {},
@@ -27,8 +41,15 @@ const bikeSlice = createSlice({
       .addCase(fetchBikes.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      .addCase(addProduct.fulfilled, (state, action) => {
+        state.items.push(action.payload); // Update the state with the new product
+      })
+      .addCase(addProduct.rejected, (state, action) => {
+        state.error = action.payload;
       });
   },
 });
+
 
 export default bikeSlice.reducer;
